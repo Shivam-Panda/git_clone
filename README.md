@@ -9,12 +9,18 @@
 POST Requests
 - Create Commit
 - Push Commit to Origin
-- Create User
+- Authentication
 - Create Project
 - Delete Project
+- Create Issues
 
 GET Requests
-- Pull from Origin
+- Pull from Origin  
+- Get USER Profile
+- Get Project
+- Get File
+- Search
+- Get All Issues
 
 # Website
 - Angular
@@ -24,3 +30,4 @@ GET Requests
 # Potential Features
 - Collaboration
 - Creating Branches
+- Project (To-Do List)
