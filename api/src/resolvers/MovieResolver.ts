@@ -1,5 +1,5 @@
 import {
-    Arg, Field, InputType, Int, Mutation, Query, Resolver
+  Arg, Field, InputType, Int, Mutation, Query, Resolver
 } from "type-graphql";
 import { Movie } from "../entity/Movie";
 

@@ -3,7 +3,7 @@ import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @ObjectType()
 @Entity()
-export class Movie extends BaseEntity {
+export class Issue extends BaseEntity {
     @Field(() => Int)
     @PrimaryGeneratedColumn()
     id: number;
@@ -12,7 +12,7 @@ export class Movie extends BaseEntity {
     @Column()
     title: string
 
-    @Field(() => Int)
-    @Column("int")
-    minutes: number
+    @Field(() => String)
+    @Column()
+    description: string
 }

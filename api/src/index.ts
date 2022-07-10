@@ -1,10 +1,9 @@
 import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
 import { ApolloServer } from "apollo-server-express";
 import express from "express";
-import "reflect-metadata";
 import { buildSchema } from "type-graphql";
 import { createConnection } from "typeorm";
-import { MovieResolver } from "./resolvers/MovieResolver";
+import { MovieResolver } from './resolvers/MovieResolver';
 
 (async () => {
   const app = express();
@@ -23,7 +22,7 @@ import { MovieResolver } from "./resolvers/MovieResolver";
 
   apolloServer.applyMiddleware({ app, cors: false });
 
-  app.listen(4000, () => {
+  app.listen(4001, () => {
     console.log("express server started");
   });
 })();
