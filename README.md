@@ -3,6 +3,8 @@
 # CLI
 - Python
 
+Need to add functionality to store the directories, to determine which file is in what folder
+
 # API
 - Typescript, Postgress SQL, GRAPHQL 
 
