@@ -17,16 +17,18 @@ def logout():
     cur_obj['username'] = None
     cur_obj['password'] = None
     open(storage_dir, "w").write(json.dumps(cur_obj))
+
+def write_folder(file_names, name):
     r_storage = open(storage_dir, "r").read()
-    obj = json.loads(r_storage)
+    cur_obj = json.loads(r_storage)
+    cur_obj[name] = file_names
+    open(storage_dir, "w").write(json.dumps(cur_obj))
 
 def write_file(s, file_name):
     r_storage = open(storage_dir, "r").read()
     cur_obj = json.loads(r_storage)
     cur_obj[file_name] = s
     open(storage_dir, "w").write(json.dumps(cur_obj))
-    r_storage = open(storage_dir, "r").read()
-    obj = json.loads(r_storage)
 
 def clear():
     open(storage_dir, "w").write('{}')
@@ -37,8 +39,6 @@ def login(username, password):
     cur_obj['username'] = username
     cur_obj['password'] = password
     open(storage_dir, "w").write(json.dumps(cur_obj))
-    r_storage = open(storage_dir, "r").read()
-    obj = json.loads(r_storage)
     
 def reset_files():
     r_storage = open(storage_dir, "r").read()
@@ -54,7 +54,8 @@ def get_login():
     cur_obj = json.loads(r_storage)
     return [cur_obj['username'], cur_obj['password']]
 
-def open_folder(f, names):
+def open_folder(f, names, name):
+    write_folder(f, name)
     for i in f:
         if i.__contains__('.'):
             dir = './'
@@ -71,34 +72,30 @@ def open_folder(f, names):
                 dir += j
                 dir += '/'
             ns.append(i)
-            write_file("Folder", i)
             dir += i
             s = os.listdir(dir)
-            open_folder(s, ns)
+            open_folder(s, ns, i)
 
 def reset():
-    r_storage = open(storage_dir, "r").read()
-    cur_obj = json.loads(r_storage)
     obj = {}
     open(storage_dir, "w").write(json.dumps(obj))
 
 if cmd == 'add':
     files = sys.argv[2::]
     if files[0] == '.':
-        # Get All Files in current folder
         files_in_dir = os.listdir('./')
+        write_folder(files_in_dir, "root")
         for i in files_in_dir:
             if i.__contains__('.'):
                 write_file(open(i).read(), i)
             else:
                 f = os.listdir(i)
-                write_file("Folder", i)
-                open_folder(f,[i])
+                open_folder(f,[i], i)
     else:
         for i in files:
             if i.startswith('./'):
                 f = os.listdir(i)
-                open_folder(f,[i])
+                open_folder(f,[i], i)
             else:
                 write_file(open(i).read(), i)
 elif cmd == 'login':
