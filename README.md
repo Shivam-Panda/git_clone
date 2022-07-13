@@ -9,18 +9,18 @@ Need to add functionality to store the directories, to determine which file is i
 - Typescript, Postgress SQL, GRAPHQL 
 
 POST Requests
-- Create Commit
 - Push Commit to Origin
-- Authentication
-- Create Project
-- Delete Project
+- Authentication (Done)
+- Create Project (Done)
+- Delete Project (Done)
 - Create Issues
 
 GET Requests
 - Pull from Origin  
-- Get USER Profile
-- Get Project
+- Get USER Profile (Done)
+- Get Project (Done)
 - Get File
+- Get Folder
 - Search
 - Get All Issues
 

@@ -24,7 +24,7 @@ export class Project extends BaseEntity {
     @Column("simple-array")
     issues: number[]
 
-    @Field(() => [Int])
-    @Column()
-    todo: number;
+    @Field(() => [Int], {nullable: true})
+    @Column({nullable: true})
+    todo?: number;
 }

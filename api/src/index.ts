@@ -3,7 +3,9 @@ import { ApolloServer } from "apollo-server-express";
 import express from "express";
 import { buildSchema } from "type-graphql";
 import { createConnection } from "typeorm";
-import { MovieResolver } from './resolvers/MovieResolver';
+import { HouseKeepingResolver } from './resolvers/HouseKeeping';
+import { ProjectResolver } from './resolvers/ProjectResolver';
+import { UserResolver } from './resolvers/UserResolver';
 
 (async () => {
   const app = express();
@@ -12,7 +14,7 @@ import { MovieResolver } from './resolvers/MovieResolver';
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [MovieResolver]
+      resolvers: [UserResolver, ProjectResolver, HouseKeepingResolver]
     }),
     plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
     context: ({ req, res }) => ({ req, res })
