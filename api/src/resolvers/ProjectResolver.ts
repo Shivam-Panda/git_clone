@@ -9,6 +9,9 @@ class DeleteProjectInput {
 
     @Field(() => String)
     name?: string;
+
+    @Field(() => String)
+    owner?: string;
 }
 
 @InputType()
@@ -18,6 +21,9 @@ class FindProjectInput {
 
     @Field(() => String)
     name?: string;
+
+    @Field(() => String)
+    owner?: string;
 }
 
 @InputType()
@@ -47,7 +53,8 @@ export class ProjectResolver {
         } else {
             return await Project.findOne({
                 where: {
-                    name: input.name
+                    name: input.name,
+                    owner: input.owner
                 }
             })
         }
@@ -61,11 +68,21 @@ export class ProjectResolver {
             }
         });
         if(user) {
+            const projects_made = await Project.find({
+                where: {
+                    name: input.name,
+                    owner: user.username
+                }
+            })
+            if(projects_made.length > 0) {
+                return null;
+            }
             const project = await Project.create({
                 name: input.name,
                 issues: [],
                 folders: [],
-                files: []
+                files: [],
+                owner: user.username
             }).save()
             if(project) {
                 const user_projects = user.projects;
@@ -92,7 +109,8 @@ export class ProjectResolver {
             })
         } else {
             await Project.delete({
-                name: input.name
+                name: input.name,
+                owner: input.owner
             });
         };
         return true;

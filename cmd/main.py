@@ -53,18 +53,20 @@ def get_login():
     cur_obj = json.loads(r_storage)
     return [cur_obj['username'], cur_obj['password']]
 
-def initializeDirStorage():
+def initializeDirStorage(projectId):
     if os.path.exists('./.panda/'):
         print('Already Exists')
         try:
             open('./.panda/storage.json', 'a')
+            
         except:
             print('File Already Created')
     else:
         os.mkdir('./.panda/')
         open('./.panda/storage.json', 'a')
-
-
+        open(storage_dir, "w").write(json.dumps({
+            'projectId': projectId
+        }))
 
 def open_folder(f, names, name):
     write_folder(f, name)
@@ -135,7 +137,7 @@ elif cmd == 'init':
         open('./.panda/storage.json')
         print('Already Initialized')
     except:
-        initializeDirStorage()
+        initializeDirStorage(int(sys.argv[2]))
         print('Initialized')
 else:
     print('Invalid Input, try again')

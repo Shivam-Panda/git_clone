@@ -27,4 +27,8 @@ export class Project extends BaseEntity {
     @Field(() => [Int], {nullable: true})
     @Column({nullable: true})
     todo?: number;
+
+    @Field(() => String)
+    @Column("string")
+    owner: string;
 }
