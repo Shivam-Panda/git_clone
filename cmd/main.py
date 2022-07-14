@@ -7,9 +7,8 @@ import sys
 
 c = sys.argv[0]
 
-cmd = sys.argv[1]
 
-storage_dir = c[0:len(c)-7] + 'storage.json'
+storage_dir = './.panda/storage.json'
 
 def logout():
     r_storage = open(storage_dir, "r").read()
@@ -54,6 +53,19 @@ def get_login():
     cur_obj = json.loads(r_storage)
     return [cur_obj['username'], cur_obj['password']]
 
+def initializeDirStorage():
+    if os.path.exists('./.panda/'):
+        print('Already Exists')
+        try:
+            open('./.panda/storage.json', 'a')
+        except:
+            print('File Already Created')
+    else:
+        os.mkdir('./.panda/')
+        open('./.panda/storage.json', 'a')
+
+
+
 def open_folder(f, names, name):
     write_folder(f, name)
     for i in f:
@@ -79,6 +91,12 @@ def open_folder(f, names, name):
 def reset():
     obj = {}
     open(storage_dir, "w").write(json.dumps(obj))
+
+try:
+    cmd = sys.argv[1]
+except:
+    print('Error, try again')
+    exit()
 
 if cmd == 'add':
     files = sys.argv[2::]
@@ -112,5 +130,12 @@ elif cmd == 'reverse':
     reset_files()
 elif cmd == 'hard_reset':
     reset()
+elif cmd == 'init':
+    try:
+        open('./.panda/storage.json')
+        print('Already Initialized')
+    except:
+        initializeDirStorage()
+        print('Initialized')
 else:
     print('Invalid Input, try again')
