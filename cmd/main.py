@@ -7,7 +7,6 @@ import sys
 
 c = sys.argv[0]
 
-
 storage_dir = './.panda/storage.json'
 
 def logout():
@@ -20,13 +19,15 @@ def logout():
 def write_folder(file_names, name):
     r_storage = open(storage_dir, "r").read()
     cur_obj = json.loads(r_storage)
-    cur_obj[name] = file_names
+    body = cur_obj['body']
+    body[name] = file_names
     open(storage_dir, "w").write(json.dumps(cur_obj))
 
 def write_file(s, file_name):
     r_storage = open(storage_dir, "r").read()
     cur_obj = json.loads(r_storage)
-    cur_obj[file_name] = s
+    body = cur_obj['body']
+    body[file_name] = s
     open(storage_dir, "w").write(json.dumps(cur_obj))
 
 def clear():
@@ -35,23 +36,22 @@ def clear():
 def login(username, password):
     r_storage = open(storage_dir, "r").read()
     cur_obj = json.loads(r_storage)
-    cur_obj['username'] = username
-    cur_obj['password'] = password
+    reqs = cur_obj['reqs']
+    reqs['username'] = username
+    reqs['password'] = password
+    cur_obj['reqs'] = reqs
     open(storage_dir, "w").write(json.dumps(cur_obj))
     
 def reset_files():
     r_storage = open(storage_dir, "r").read()
     cur_obj = json.loads(r_storage)
-    obj = {
-        'username': cur_obj['username'],
-        'password': cur_obj['password']
-    }
-    open(storage_dir, "w").write(json.dumps(obj))
+    cur_obj['body'] = {}
+    open(storage_dir, "w").write(json.dumps(cur_obj))
 
 def get_login():
     r_storage = open(storage_dir, "r").read()
     cur_obj = json.loads(r_storage)
-    return [cur_obj['username'], cur_obj['password']]
+    return [cur_obj['reqs']['username'], cur_obj['reqs']['password']]
 
 def initializeDirStorage(projectId):
     if os.path.exists('./.panda/'):
@@ -65,7 +65,12 @@ def initializeDirStorage(projectId):
         os.mkdir('./.panda/')
         open('./.panda/storage.json', 'a')
         open(storage_dir, "w").write(json.dumps({
-            'projectId': projectId
+            'reqs': {
+                'projectId': projectId
+            },
+            'body': {
+                'tester': None
+            }
         }))
 
 def open_folder(f, names, name):
@@ -88,11 +93,11 @@ def open_folder(f, names, name):
             ns.append(i)
             dir += i
             s = os.listdir(dir)
+            write_folder(s, i)
             open_folder(s, ns, i)
 
 def reset():
-    obj = {}
-    open(storage_dir, "w").write(json.dumps(obj))
+    open(storage_dir, "w").write(json.dumps({}))
 
 try:
     cmd = sys.argv[1]
@@ -104,10 +109,21 @@ if cmd == 'add':
     files = sys.argv[2::]
     if files[0] == '.':
         files_in_dir = os.listdir('./')
-        write_folder(files_in_dir, "root")
+        files_without_panda = []
         for i in files_in_dir:
-            if i.__contains__('.'):
-                write_file(open(i).read(), i)
+            if i == '.panda':
+                pass
+            else:
+                files_without_panda.append(i)
+
+        write_folder(files_without_panda, "root")
+        
+        for i in files_in_dir:
+            if i == '.panda':
+                # DO NOTHING
+                pass
+            elif i.__contains__('.'):
+                write_file(open(i, "r").read(), i)
             else:
                 f = os.listdir(i)
                 open_folder(f,[i], i)
@@ -117,7 +133,8 @@ if cmd == 'add':
                 f = os.listdir(i)
                 open_folder(f,[i], i)
             else:
-                write_file(open(i).read(), i)
+                write_file(open(i, "r").read(), i)
+
 elif cmd == 'login':
     user = sys.argv[2]
     passw = sys.argv[3]
