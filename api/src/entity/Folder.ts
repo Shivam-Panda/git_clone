@@ -16,7 +16,11 @@ export class Folder extends BaseEntity {
     @Column("string")
     name: string;
 
-    @Field(() => Int)
-    @Column("int")
-    folder: string;
+    @Field(() => [String])
+    @Column("simple-array")
+    files: Array<string>;
+
+    @Field(() => String)
+    @Column("string")
+    parentFolder: string
 }
