@@ -12,30 +12,6 @@ class GetFileInput {
     projectId: number;
 }
 
-@InputType()
-class CreateFileInput {
-    @Field(() => Int)
-    projectId: number
-
-    @Field(() => String)
-    fileName: string;
-
-    @Field(() => String)
-    body: string;
-}
-
-@InputType()
-class CreateFolderInput {
-    @Field(() => Int)
-    projectId: number
-
-    @Field(() => String)
-    folderName: string;
-
-    @Field(() => [String])
-    files: Array<string>;
-}
-
 @Resolver()
 export class FileResolver {
     @Mutation(() => Boolean, { nullable: true })
