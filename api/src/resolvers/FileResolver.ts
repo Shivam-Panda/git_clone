@@ -1,12 +1,15 @@
-import { File } from "src/entity/File";
-import { Folder } from "src/entity/Folder";
-import { Project } from "src/entity/Project";
 import { Arg, Field, InputType, Int, Mutation, Query, Resolver } from "type-graphql";
+import { File } from "../entity/File";
+import { Folder } from "../entity/Folder";
+import { Project } from "../entity/Project";
 
 @InputType()
 class GetFileInput {
-    @Field(() => String)
-    name: string;
+    @Field(() => String, {nullable:true})
+    name?: string;
+
+    @Field(() => Int, {nullable:true})
+    id?: number;
 
     @Field(() => Int)
     projectId: number;
@@ -15,29 +18,41 @@ class GetFileInput {
 @Resolver()
 export class FileResolver {
     @Mutation(() => Boolean, { nullable: true })
-    async commit(@Arg("input") input: any, @Arg("projectId") projectId: number) {
+    async commit(@Arg("input") input: string, @Arg("projectId") projectId: number) {
         const project = await Project.findOne({
             where: {
                 id: projectId
             }
         });
         if(project) {
-            const project_files = project.files;
-            const project_folder = project.folders;
+            for(let i = 0; i < project.files.length; i++) {
+                await File.delete({
+                    id: project.files[i]
+                })
+            };
+            for(let i = 0; i < project.folders.length; i++) {
+                await Folder.delete({
+                    id: project.folders[i]
+                })
+            };
+            const project_files = [];
+            const project_folder = [];
             const file_to_folder: any = {};
-            for(const key in input) {
+            const input_json = JSON.parse(input)
+            for(const key in input_json) {
                 if(key.includes('.')) {
                     // File
                     // Do Nothing
                 } else {
                     // Folder
-                    const folder_vals = input[key]
+                    const folder_vals = input_json[key]
                     for(let i = 0; i < folder_vals.length; i++) {
                         if(folder_vals[i].includes('.')) {
                             const f = await File.create({
                                 fileName: folder_vals[i],
-                                body: input[folder_vals[i]],
-                                folder: key
+                                body: input_json[folder_vals[i]],
+                                folder: key,
+                                projectId
                             }).save()
                             project_files.push(f.id);
                         } else {
@@ -49,7 +64,7 @@ export class FileResolver {
 
             for(const key in file_to_folder) {
                 const f = await Folder.create({
-                    files: input[key],
+                    files: input_json[key],
                     parentFolder: file_to_folder[key],
                     name: key,
                     projectId: projectId
@@ -77,6 +92,12 @@ export class FileResolver {
             }
         });
         if(project) {
+            await Project.update({
+                id: projectId
+            }, {
+                files: [],
+                folders: []
+            })
             const sender: any = {};
             const proj_folders: Folder[] = [];
             const proj_files: File[] = [];
@@ -130,19 +151,25 @@ export class FileResolver {
                 id: input.projectId
             }
         }) ;
-        if(project) {
+        if(project && input.id) {
+            return await File.findOne({
+                where: {
+                    projectId: input.projectId,
+                    id: input.id
+                }
+            });
+        } else if(project && input.name) {
             return await File.findOne({
                 where: {
                     projectId: input.projectId,
                     fileName: input.name
                 }
             });
-        } else {
-            return null;
         }
+        return null;
     }
 
-    @Query(() => Array<String>, {nullable: true})
+    @Query(() => [String]!, {nullable: true})
     async getFolder(@Arg("input") input: GetFileInput) {
         const project = await Project.findOne({
             where: {

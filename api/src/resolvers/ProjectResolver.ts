@@ -1,28 +1,15 @@
 import { Arg, Field, InputType, Int, Mutation, Query, Resolver } from "type-graphql";
 import { Project } from "../entity/Project";
 import { User } from "../entity/User";
-
-@InputType()
-class DeleteProjectInput {
-    @Field(() => Int)
-    id?: number;
-
-    @Field(() => String)
-    name?: string;
-
-    @Field(() => String)
-    owner?: string;
-}
-
 @InputType()
 class FindProjectInput {
-    @Field(() => Int)
+    @Field(() => Int, { nullable: true })
     id?: number;
 
-    @Field(() => String)
+    @Field(() => String, { nullable: true })
     name?: string;
 
-    @Field(() => String)
+    @Field(() => String, { nullable: true })
     owner?: string;
 }
 
@@ -51,12 +38,27 @@ export class ProjectResolver {
                 }
             })
         } else {
-            return await Project.findOne({
-                where: {
-                    name: input.name,
-                    owner: input.owner
+            const owner = await User.findOne({
+                where:{
+                    username: input.owner
                 }
-            })
+            });
+            if(owner) {
+                const projects = await owner.projects;
+                for(let i = 0; i < projects.length; i++) {
+                    const p = await Project.findOne({
+                        where: {
+                            id: projects[i]
+                        }
+                    });
+                    if(p && p.name == input.name) {
+                        return p;
+                    }
+                }
+                return null;
+            } else {
+                return null;
+            }
         }
     }
 
@@ -71,7 +73,6 @@ export class ProjectResolver {
             const projects_made = await Project.find({
                 where: {
                     name: input.name,
-                    owner: user.username
                 }
             })
             if(projects_made.length > 0) {
@@ -82,7 +83,6 @@ export class ProjectResolver {
                 issues: [],
                 folders: [],
                 files: [],
-                owner: user.username
             }).save()
             if(project) {
                 const user_projects = user.projects;
@@ -102,17 +102,10 @@ export class ProjectResolver {
     }
 
     @Mutation(() => Boolean)
-    async deleteProject(@Arg("input") input: DeleteProjectInput) {
-        if(input.id) {
-            await Project.delete({
-                id:input.id
-            })
-        } else {
-            await Project.delete({
-                name: input.name,
-                owner: input.owner
-            });
-        };
+    async deleteProject(@Arg("id") id: number) {
+        await Project.delete({
+            id
+        });
         return true;
     }
 }

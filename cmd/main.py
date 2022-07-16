@@ -1,6 +1,18 @@
 # When finished with entire script, build with 'pyinstaller {file_name}.py'
 # When finished with entire script, build with 'pyinstaller main.py'
 
+'''
+Implement This, 
+Format:
+
+{
+    "body": {
+        "needed": ["root"],
+        "root": [...]
+    }
+}
+'''
+
 import json
 import os
 import sys

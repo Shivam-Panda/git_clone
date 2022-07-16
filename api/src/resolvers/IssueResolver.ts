@@ -1,6 +1,6 @@
-import { Issue } from "src/entity/Issue";
-import { Project } from "src/entity/Project";
 import { Arg, Field, InputType, Int, Mutation, Query, Resolver } from "type-graphql";
+import { Issue } from "../entity/Issue";
+import { Project } from "../entity/Project";
 
 @InputType()
 class CreateIssueInput {

@@ -9,11 +9,11 @@ export class File extends BaseEntity {
     id: number;
 
     @Field(() => String)
-    @Column("string")
+    @Column()
     folder: string;
 
     @Field(() => String)
-    @Column("string")
+    @Column()
     body: string;
 
     @Field(() => Int)
@@ -21,6 +21,6 @@ export class File extends BaseEntity {
     projectId: number;
 
     @Field(() => String)
-    @Column("string")
+    @Column()
     fileName: string;
 }

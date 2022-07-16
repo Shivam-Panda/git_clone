@@ -13,7 +13,7 @@ export class Folder extends BaseEntity {
     projectId: number;
 
     @Field(() => String)
-    @Column("string")
+    @Column()
     name: string;
 
     @Field(() => [String])
@@ -21,6 +21,6 @@ export class Folder extends BaseEntity {
     files: Array<string>;
 
     @Field(() => String)
-    @Column("string")
+    @Column()
     parentFolder: string
 }
