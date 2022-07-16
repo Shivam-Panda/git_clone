@@ -11,6 +11,8 @@ import { UserResolver } from './resolvers/UserResolver';
 
 (async () => {
   const app = express();
+  
+  let port = process.env.PORT || 4001;
 
   await createConnection();
 
@@ -26,7 +28,5 @@ import { UserResolver } from './resolvers/UserResolver';
 
   apolloServer.applyMiddleware({ app, cors: false });
 
-  app.listen(4001, () => {
-    console.log("express server started");
-  });
-})();
+  app.listen(port );
+})();``

@@ -7,6 +7,7 @@ Need to add functionality to store the directories, to determine which file is i
 
 # API
 - Typescript, Postgress SQL, GRAPHQL 
+- https://safe-crag-17237.herokuapp.com/graphql (HOSTED)
 
 POST Requests
 - Push Commit to Origin (Done)
