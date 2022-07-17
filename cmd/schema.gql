@@ -1,0 +1,96 @@
+type Query {
+  pullRequest(projectId: Float!): String
+  getFile(input: GetFileInput!): File
+  getFolder(input: GetFileInput!): [String!]
+  projectIssues(id: Float!): [Issue!]
+  getIssue(id: Float!): Issue
+  allProjects: [Project!]
+  findProject(input: FindProjectInput!): Project
+  getAllUsers: [User!]!
+  login(input: LoginInput!): String
+  findUser(input: FindUserInput!): User
+}
+
+input GetFileInput {
+  name: String
+  id: Int
+  projectId: Int!
+}
+
+type File {
+  id: Int!
+  folder: String!
+  body: String!
+  projectId: Int!
+  fileName: String!
+}
+
+type Issue {
+  id: Int!
+  title: String!
+  description: String!
+}
+
+type Project {
+  id: Int!
+  name: String!
+  files: [Int!]!
+  folders: [Int!]!
+  issues: [Int!]!
+}
+
+input FindProjectInput {
+  id: Int
+  name: String
+  owner: String
+}
+
+type User {
+  id: Int!
+  username: String!
+  key: String!
+  projects: [Int!]!
+}
+
+input LoginInput {
+  username: String!
+  password: String!
+}
+
+input FindUserInput {
+  id: Int
+  username: String
+}
+
+type Mutation {
+  commit(projectId: Float!, input: String!): Boolean
+  hardReset: Boolean!
+  createIssue(input: CreateIssueInput!): Int
+  createProject(input: CreateProjectInput!): Int
+  deleteProject(id: Float!): Boolean!
+  createUser(input: CreateUserInput!): String
+}
+
+input CreateIssueInput {
+  projectId: Int!
+  name: String!
+  body: String!
+}
+
+input CreateProjectInput {
+  key: String!
+  name: String!
+}
+
+input CreateUserInput {
+  username: String!
+  password: String!
+}
+
+type Folder {
+  id: Int!
+  projectId: Int!
+  name: String!
+  files: [String!]!
+  parentFolder: String!
+}

@@ -2,6 +2,7 @@
 
 # CLI
 - Python
+- pyinstaller --hidden-import python_graphql_client --onefile main.py (Builder Script)
 
 Need to add functionality to store the directories, to determine which file is in what folder
 

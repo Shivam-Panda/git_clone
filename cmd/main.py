@@ -1,18 +1,5 @@
 # When finished with entire script, build with 'pyinstaller {file_name}.py'
 # When finished with entire script, build with 'pyinstaller main.py'
-
-'''
-Implement This, 
-Format:
-
-{
-    "body": {
-        "needed": ["root"],
-        "root": [...]
-    }
-}
-'''
-
 import json
 import os
 import sys
@@ -20,70 +7,136 @@ import sys
 c = sys.argv[0]
 
 storage_dir = './.panda/storage.json'
+body_dir = './.panda/body.json'
+
+from python_graphql_client import GraphqlClient
+
+client = GraphqlClient("https://safe-crag-17237.herokuapp.com/graphql")
+
+
+def loginHttp(username, password):
+    query = """
+        query ($username: String!, $password: String!) {
+            login(input: {
+                username: $username,
+                password: $password
+            })
+        } 
+    """
+    data = client.execute(query=query, variables={
+        "username": username,
+        "password": password
+    })['data']
+    return data['login']
 
 def logout():
     r_storage = open(storage_dir, "r").read()
     cur_obj = json.loads(r_storage)
-    cur_obj['username'] = None
-    cur_obj['password'] = None
+    reqs = cur_obj['reqs']
+    reqs['username'] = None
+    reqs['password'] = None
+    reqs['key'] = None
+    reqs['projectId'] = None
+    cur_obj['reqs'] = reqs
     open(storage_dir, "w").write(json.dumps(cur_obj))
+
+def getProjectId():
+    r_storage = open(storage_dir, "r").read()
+    cur_obj = json.loads(r_storage)
+    reqs = cur_obj['reqs']
+    return reqs['projectId']
 
 def write_folder(file_names, name):
-    r_storage = open(storage_dir, "r").read()
+    r_storage = open(body_dir, "r").read()
     cur_obj = json.loads(r_storage)
-    body = cur_obj['body']
-    body[name] = file_names
-    open(storage_dir, "w").write(json.dumps(cur_obj))
+    cur_obj[name] = file_names
+    open(body_dir, "w").write(json.dumps(cur_obj))
+
 
 def write_file(s, file_name):
-    r_storage = open(storage_dir, "r").read()
+    r_storage = open(body_dir, "r").read()
     cur_obj = json.loads(r_storage)
-    body = cur_obj['body']
-    body[file_name] = s
-    open(storage_dir, "w").write(json.dumps(cur_obj))
+    cur_obj[file_name] = s
+    open(body_dir, "w").write(json.dumps(cur_obj))
 
-def clear():
-    open(storage_dir, "w").write('{}')
+
+def commit(projectId, s):
+    query = '''
+        mutation ($s: String!, $projectId: Float!) {
+    commit(
+        input: $s,
+        projectId: $projectId
+    )
+}
+    '''
+
+    d = client.execute(query=query, variables={
+        "projectId": projectId,
+        "s": s
+    })
+    return d['data']['commit']
 
 def login(username, password):
     r_storage = open(storage_dir, "r").read()
     cur_obj = json.loads(r_storage)
     reqs = cur_obj['reqs']
-    reqs['username'] = username
-    reqs['password'] = password
-    cur_obj['reqs'] = reqs
-    open(storage_dir, "w").write(json.dumps(cur_obj))
-    
-def reset_files():
+    try:
+        key = loginHttp(username, password)
+        if key == None:
+            print("Error. Signup on the website (Insert Link when Done) or Login Error")
+            exit()
+        reqs['username'] = username
+        reqs['password'] = password
+        reqs['key'] = key
+        cur_obj['reqs'] = reqs
+        open(storage_dir, "w").write(json.dumps(cur_obj))
+    except:
+        pass
+
+def checkLogin():
     r_storage = open(storage_dir, "r").read()
     cur_obj = json.loads(r_storage)
-    cur_obj['body'] = {}
-    open(storage_dir, "w").write(json.dumps(cur_obj))
+    if cur_obj['reqs']['key']:
+        return True
+    else:
+        return False
+
+def reset_files():
+    cur_obj = {
+        'need': ['root']
+    }
+    open(body_dir, "w").write(json.dumps(cur_obj))
+
 
 def get_login():
     r_storage = open(storage_dir, "r").read()
     cur_obj = json.loads(r_storage)
     return [cur_obj['reqs']['username'], cur_obj['reqs']['password']]
 
+def stringify():
+    return rf'{open(body_dir, "r").read()}'
+
 def initializeDirStorage(projectId):
     if os.path.exists('./.panda/'):
         print('Already Exists')
         try:
             open('./.panda/storage.json', 'a')
-            
+
         except:
             print('File Already Created')
     else:
         os.mkdir('./.panda/')
-        open('./.panda/storage.json', 'a')
+        open(storage_dir, 'a')
+        open(body_dir, 'a')
         open(storage_dir, "w").write(json.dumps({
             'reqs': {
                 'projectId': projectId
-            },
-            'body': {
-                'tester': None
             }
         }))
+        open(body_dir, "w").write(json.dumps({
+            "need": ['root']
+        }))
+
 
 def open_folder(f, names, name):
     write_folder(f, name)
@@ -94,7 +147,10 @@ def open_folder(f, names, name):
                 dir += j
                 dir += '/'
             dir += i
-            write_file(open(dir).read(), i)
+            try:
+                write_file(open(dir).read(), i)
+            except:
+                pass
         else:
             dir = './'
             ns = []
@@ -104,12 +160,27 @@ def open_folder(f, names, name):
                 dir += '/'
             ns.append(i)
             dir += i
-            s = os.listdir(dir)
-            write_folder(s, i)
-            open_folder(s, ns, i)
+            try:
+                s = os.listdir(dir)
+                write_folder(s, i)
+                open_folder(s, ns, i)
+            except:
+                pass
 
-def reset():
-    open(storage_dir, "w").write(json.dumps({}))
+def handlePullRequest():
+    query = """
+        query ($projectId: Float!) {
+            pullRequest(projectId: $projectId)
+        }
+    """
+
+    iid = getProjectId()
+
+    data = client.execute(query=query, variables={
+        'projectId': iid
+    })['data']
+    j = json.loads(data['pullRequest'])
+    print(j)
 
 try:
     cmd = sys.argv[1]
@@ -123,34 +194,58 @@ if cmd == 'add':
         files_in_dir = os.listdir('./')
         files_without_panda = []
         for i in files_in_dir:
-            if i == '.panda':
+            if i == '.panda' or i == '.idea' or i == '.git' or i == 'env':
                 pass
             else:
                 files_without_panda.append(i)
 
         write_folder(files_without_panda, "root")
-        
-        for i in files_in_dir:
+
+        for i in files_without_panda:
             if i == '.panda':
                 # DO NOTHING
                 pass
             elif i.__contains__('.'):
-                write_file(open(i, "r").read(), i)
+                try:
+                    write_file(open(i, "r").read(), i)
+                except:
+                    pass
             else:
                 f = os.listdir(i)
-                open_folder(f,[i], i)
+                try:
+                    open_folder(f, [i], i)
+                except:
+                    pass
     else:
         for i in files:
             if i.startswith('./'):
                 f = os.listdir(i)
-                open_folder(f,[i], i)
+                open_folder(f, [i], i)
             else:
-                write_file(open(i, "r").read(), i)
-
+                try:
+                    write_file(open(i, "r").read(), i)
+                except:
+                    pass
 elif cmd == 'login':
     user = sys.argv[2]
     passw = sys.argv[3]
     login(user, passw)
+
+elif cmd == 'commit':
+    print("Make Sure You Are Logged In and have Added")
+    if checkLogin():
+        s = stringify()
+        print(s)
+        if commit(getProjectId(), s):
+            reset_files()
+            print("Commit Succeded")
+        else:
+            print("Commit Failed, Please Try Again")
+    else:
+        print('Guess You weren\'t Logged In')
+        exit()
+elif cmd == 'pull':
+    handlePullRequest()
 elif cmd == 'get_login':
     get = get_login()
     print('Username: ' + get[0])
@@ -159,8 +254,6 @@ elif cmd == 'logout':
     logout()
 elif cmd == 'reverse':
     reset_files()
-elif cmd == 'hard_reset':
-    reset()
 elif cmd == 'init':
     try:
         open('./.panda/storage.json')
