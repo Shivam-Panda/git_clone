@@ -29,6 +29,7 @@ def loginHttp(username, password):
     })['data']
     return data['login']
 
+
 def logout():
     r_storage = open(storage_dir, "r").read()
     cur_obj = json.loads(r_storage)
@@ -40,11 +41,13 @@ def logout():
     cur_obj['reqs'] = reqs
     open(storage_dir, "w").write(json.dumps(cur_obj))
 
+
 def getProjectId():
     r_storage = open(storage_dir, "r").read()
     cur_obj = json.loads(r_storage)
     reqs = cur_obj['reqs']
     return reqs['projectId']
+
 
 def write_folder(file_names, name):
     r_storage = open(body_dir, "r").read()
@@ -76,6 +79,7 @@ def commit(projectId, s):
     })
     return d['data']['commit']
 
+
 def login(username, password):
     r_storage = open(storage_dir, "r").read()
     cur_obj = json.loads(r_storage)
@@ -93,6 +97,7 @@ def login(username, password):
     except:
         pass
 
+
 def checkLogin():
     r_storage = open(storage_dir, "r").read()
     cur_obj = json.loads(r_storage)
@@ -100,6 +105,7 @@ def checkLogin():
         return True
     else:
         return False
+
 
 def reset_files():
     cur_obj = {
@@ -113,8 +119,10 @@ def get_login():
     cur_obj = json.loads(r_storage)
     return [cur_obj['reqs']['username'], cur_obj['reqs']['password']]
 
+
 def stringify():
     return rf'{open(body_dir, "r").read()}'
+
 
 def initializeDirStorage(projectId):
     if os.path.exists('./.panda/'):
@@ -167,6 +175,16 @@ def open_folder(f, names, name):
             except:
                 pass
 
+def pullRequestWriteFolder(full_vals, dir, folder_name):
+    files = full_vals[folder_name]
+    cur_dir = dir + folder_name + '/'
+
+    for i in files:
+        if i.__contains__('.'):
+            open(cur_dir + i, "w").write(full_vals[i])
+        else:
+            pullRequestWriteFolder(full_vals, cur_dir, i)
+
 def handlePullRequest():
     query = """
         query ($projectId: Float!) {
@@ -180,7 +198,13 @@ def handlePullRequest():
         'projectId': iid
     })['data']
     j = json.loads(data['pullRequest'])
-    print(j)
+    # Get the Root
+    root = j['root']
+    for i in root:
+        if i.__contains__('.'):
+            open(i, 'w').write(j[i])
+        else:
+            pullRequestWriteFolder(full_vals=j, dir='./', folder_name=i)
 
 try:
     cmd = sys.argv[1]
