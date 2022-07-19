@@ -187,37 +187,22 @@ def pullRequestWriteFolder(full_vals, dir, folder_name):
             pullRequestWriteFolder(full_vals, cur_dir, i)
 
 def handlePullRequest():
-    query = """
-        query ($projectId: Float!) {
-            pullRequest(projectId: $projectId)
-        }
-    """
 
-    query_with_name = """
+    query = """
         query ($projectId: Float!, $name: String!) {
             pullRequest(projectId: $projectId),
             name: $name
         }
     """
 
-    name = None
-
-    try:
-        name = sys.argv[2]
-    except:
-        pass
+    name = input('Commit Name: ')
 
     iid = getProjectId()
 
-    if name is not None:
-        data = client.execute(query=query_with_name, variables={
-            'projectId': iid,
-            "name": name
-        })['data']
-    else:
-        data = client.execute(query=query, variables={
-            'projectId': iid
-        })['data']
+    data = client.execute(query=query, variables={
+        'projectId': iid,
+        "name": name
+    })['data']
 
     if data['errors'] is not None:
         return
@@ -281,7 +266,7 @@ elif cmd == 'login':
     login(user, passw)
 
 elif cmd == 'commit':
-    com_name = sys.argv[2]
+    com_name = input('Commit Name: ')
     print("Make Sure You Are Logged In and have Added")
     if checkLogin():
         s = stringify()
