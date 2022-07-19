@@ -159,7 +159,8 @@ def open_folder(f, names, name):
             try:
                 write_file(open(dir).read(), i)
             except:
-                pass
+                print("Error")
+                exit()
         else:
             dir = './'
             ns = []
@@ -174,7 +175,9 @@ def open_folder(f, names, name):
                 write_folder(s, i)
                 open_folder(s, ns, i)
             except:
-                pass
+                print("Error")
+                exit()
+
 
 def pullRequestWriteFolder(full_vals, dir, folder_name):
     files = full_vals[folder_name]
@@ -186,15 +189,35 @@ def pullRequestWriteFolder(full_vals, dir, folder_name):
         else:
             pullRequestWriteFolder(full_vals, cur_dir, i)
 
-def handlePullRequest():
 
+def cloneRequestWriteFolder(full_vals, dir, folder_name):
+    files = full_vals[folder_name]
+    cur_dir = dir + folder_name + '/'
+
+    os.mkdir(cur_dir)
+
+    for i in files:
+        if i.__contains__('.'):
+            try:
+                open(cur_dir + i, "a")
+            except:
+                print("Already Created")
+            open(cur_dir + i, "w").write(full_vals[i])
+        else:
+            pullRequestWriteFolder(full_vals, cur_dir, i)
+
+# To Git Clone just pull request it
+def handlePullRequest():
     query = """
         query ($projectId: Float!, $name: String!) {
-            pullRequest(projectId: $projectId),
-            name: $name
+            pullRequest(
+                projectId: $projectId,
+                name: $name
+            )
         }
     """
 
+    print("To Get the Root Commit, click enter")
     name = input('Commit Name: ')
 
     iid = getProjectId()
@@ -216,10 +239,50 @@ def handlePullRequest():
         else:
             pullRequestWriteFolder(full_vals=j, dir='./', folder_name=i)
 
+
+def clone():
+    try:
+        projectId = sys.argv[2]
+        commitName = input('Commit Name: ')
+
+        query = """
+            query ($projectId: Float!, $name: String!) {
+                pullRequest(
+                    projectId: $projectId,
+                    name: $name
+                )
+            }
+        """
+
+        data = client.execute(query=query, variables={
+            'projectId': projectId,
+            'name': commitName
+        })['data']
+
+        if data['errors'] is not None:
+            exit()
+
+        j = json.loads(data['pullRequest'])
+
+        root = j['root']
+        for i in root:
+            if i.__contains__('.'):
+                try:
+                    open(i, "a")
+                except:
+                    print("File Already Created")
+                open(i, "w").write(j[i])
+            else:
+                cloneRequestWriteFolder(full_vals=j, dir='./', folder_name=i)
+    except:
+        print("Must Have Project ID Trying to Clone")
+        exit()
+
+
 try:
     cmd = sys.argv[1]
 except:
-    print('Error, try again')
+    print('Must Have An Arguement After Command')
     exit()
 
 if cmd == 'add':
@@ -273,7 +336,7 @@ elif cmd == 'commit':
         print(s)
         if commit(getProjectId(), s, com_name):
             reset_files()
-            print("Commit Succeded")
+            print("Commit Succeeded")
         else:
             print("Commit Failed, Please Try Again")
     else:
@@ -281,6 +344,8 @@ elif cmd == 'commit':
         exit()
 elif cmd == 'pull':
     handlePullRequest()
+elif cmd == 'clone':
+    clone()
 elif cmd == 'get_login':
     get = get_login()
     print('Username: ' + get[0])
@@ -297,4 +362,4 @@ elif cmd == 'init':
         initializeDirStorage(int(sys.argv[2]))
         print('Initialized')
 else:
-    print('Invalid Input, try again')
+    print('Valid Command not found')
