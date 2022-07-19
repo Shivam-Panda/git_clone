@@ -193,11 +193,35 @@ def handlePullRequest():
         }
     """
 
+    query_with_name = """
+        query ($projectId: Float!, $name: String!) {
+            pullRequest(projectId: $projectId),
+            name: $name
+        }
+    """
+
+    name = None
+
+    try:
+        name = sys.argv[2]
+    except:
+        pass
+
     iid = getProjectId()
 
-    data = client.execute(query=query, variables={
-        'projectId': iid
-    })['data']
+    if name is not None:
+        data = client.execute(query=query_with_name, variables={
+            'projectId': iid,
+            "name": name
+        })['data']
+    else:
+        data = client.execute(query=query, variables={
+            'projectId': iid
+        })['data']
+
+    if data['errors'] is not None:
+        return
+
     j = json.loads(data['pullRequest'])
     # Get the Root
     root = j['root']
