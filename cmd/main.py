@@ -63,22 +63,23 @@ def write_file(s, file_name):
     open(body_dir, "w").write(json.dumps(cur_obj))
 
 
-def commit(projectId, s):
+def commit(projectId, s, name):
     query = '''
-        mutation ($s: String!, $projectId: Float!) {
-    commit(
-        input: $s,
-        projectId: $projectId
-    )
-}
+        mutation ($s: String!, $projectId: Float!, $name: String!) {
+            commit(
+                input: $s,
+                projectId: $projectId,
+                name: $name
+            )
+        }
     '''
 
     d = client.execute(query=query, variables={
         "projectId": projectId,
-        "s": s
+        "s": s,
+        "name": name
     })
     return d['data']['commit']
-
 
 def login(username, password):
     r_storage = open(storage_dir, "r").read()
@@ -256,11 +257,12 @@ elif cmd == 'login':
     login(user, passw)
 
 elif cmd == 'commit':
+    com_name = sys.argv[2]
     print("Make Sure You Are Logged In and have Added")
     if checkLogin():
         s = stringify()
         print(s)
-        if commit(getProjectId(), s):
+        if commit(getProjectId(), s, com_name):
             reset_files()
             print("Commit Succeded")
         else:
