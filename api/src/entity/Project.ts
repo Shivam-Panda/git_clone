@@ -22,5 +22,5 @@ export class Project extends BaseEntity {
 
     @Field(() => Int, { nullable: true })
     @Column("int", {nullable: true})
-    todo: number;
+    todo?: number | null;
 }

@@ -1,6 +1,6 @@
-import { Project } from "src/entity/Project";
 import { Arg, Field, InputType, Int, Mutation, Query, Resolver } from "type-graphql";
 import { Item } from "../entity/Item";
+import { Project } from "../entity/Project";
 import { Todo } from "../entity/Todo";
 
 @InputType()
@@ -27,10 +27,10 @@ class UpdatePositionInput {
     next: string;
 
     @Field(() => Int)
-    todoId: string;
+    todoId: number;
 
     @Field(() => Int)
-    itemId: string;
+    id: number;
 }
 
 @Resolver()
@@ -45,8 +45,7 @@ export class TodoResolver {
         if(!todo) return null;
         const i = await Item.create({
             title: input.title,
-            description: input.description,
-            todoId: todo.id
+            description: input.description
         }).save()
         switch(input.category) {
             case "todo":
@@ -87,40 +86,32 @@ export class TodoResolver {
         return i.id;
     }
 
-    @Query(() => [Item], { nullable: true })
+    @Query(() => [Int], { nullable: true })
     async getItems(@Arg("category") category: string, @Arg("id") id: number) {
         const todo = await Todo.findOne({
             where: {
                 id
             }
         });
-        if(!todo) return null;
-        let t_items: number[] = [];
-        switch(category) {
-            case "todo":
-                t_items = todo.todo;
-                break;
-            case "current":
-                t_items = todo.current
-                break;
-            case "done": 
-                t_items = todo.done;
-                break;
-        }
-
-        const items = [];
-
-        for(let i = 0; i < t_items.length; i++) {
-            const i = await Item.findOne({
-                where: {
-                    id: t_items[i]
-                }
-            })
-            if(i) {
-                items.push(i)
+        if(todo) {
+            if(category == 'todo') {
+                return todo.todo;
+            } else if (category == 'current') {
+                return todo.current;
+            } else {
+                return todo.done;
             }
-        }
-        return items;
+        } 
+        return null;
+    }
+
+    @Query(() => Item, { nullable: true })
+    async getItem(@Arg("id") id: number) {
+        return await Item.findOne({
+            where: {
+                id
+            }
+        });
     }
 
     @Mutation(() => Boolean)
@@ -132,108 +123,100 @@ export class TodoResolver {
         });
         const item = await Item.findOne({
             where: {
-                id: input.itemId
+                id: input.id
             }
         })
 
         if(!todo) return false;
         if(!item) return false;
-        let curs: number[] = []
-        let nexts: number[] = []
 
-        switch(input.current) {
-            case "todo":
-                curs = todo.todo 
-                curs.filter((val,i) => {
-                    if(val == item.id) {
-                        return false;
-                    }
-                    return true;
-                })
-                await Todo.update({
-                    id: input.id
-                }, {
-                    todo: curs
-                });
-                break;
-            case "current":
-                curs = todo.current 
-                curs.filter((val,i) => {
-                    if(val == item.id) {
-                        return false;
-                    }
-                    return true;
-                })
-                await Todo.update({
-                    id: input.id
-                }, {
-                    current: curs
-                });
-                break;
-            case "done":
-                curs = todo.done 
-                curs.filter((val,i) => {
-                    if(val == item.id) {
-                        return false;
-                    }
-                    return true;
-                })
-                await Todo.update({
-                    id: input.todoId
-                }, {
-                    done: curs
-                });
-                break;
+        if(input.current == 'todo') {
+            let t = []
+            let found = false;
+            for(let i = 0; i < todo.todo.length; i++) {
+                if(todo.todo[i] == input.id) {
+                    found = true;
+                } else {
+                    t.push(todo.todo[i])
+                }
+            }
+            if(found == false) return false;
+            await Todo.update({
+                id: input.todoId
+            }, {
+                todo: t
+            });
+        } else if(input.current == 'current') {
+            let t = [];
+            let found = false;
+            for(let i = 0; i < todo.current.length; i++) {
+                if(todo.current[i] == input.id) {
+                    found = true;
+                } else {
+                    t.push(todo.current[i])
+                }
+            }
+            if(found == false) return false;
+            await Todo.update({
+                id: input.todoId
+            }, {
+                current: t
+            });
+        } else {
+            let found = false;
+            let t = [];
+            for(let i = 0; i < todo.done.length; i++) {
+                if(todo.done[i] == input.id) {
+                    found = true;
+                } else {
+                    t.push(todo.done[i])
+                }
+            }
+            if(found == false) {
+                return false;
+            }
+            await Todo.update({
+                id: input.todoId
+            }, {
+                done: t
+            });
         }
 
-        switch(input.next) {
-            case "todo":
-                nexts = todo.todo
-                nexts.push(item.id)
-                await Todo.update({
-                    id: input.todoId
-                }, {
-                    todo: nexts
-                })
-                break;
-            case "current":
-                nexts = todo.current
-                nexts.push(item.id)
-                await Todo.update({
-                    id: input.todoId
-                }, {
-                    current: nexts
-                })
-                break;
-            case "done":
-                nexts = todo.done
-                nexts.push(item.id)
-                await Todo.update({
-                    id: input.todoId
-                }, {
-                    done: nexts
-                })
-                break;
+        if(input.next == 'todo') {
+            let t = [...todo.todo, input.id];
+            await Todo.update({
+                id: input.todoId
+            }, {
+                todo: t
+            });
+        } else if(input.next == 'current') {
+            let t = [...todo.current, input.id]
+            await Todo.update({
+                id: input.todoId
+            }, {
+                current: t
+            });
+        } else {
+            let t = [...todo.done, input.id]
+            await Todo.update({
+                id: input.todoId
+            }, {
+                done: t
+            });
         }
+        
+        return true;
     }
 
     @Mutation(() => Boolean)
     async initTodo(@Arg("id") id: number) {
-
-    }
-
-    @Mutation(() => Boolean)
-    async deleteItem(@Arg("id") id: number) {
-        const i = await Item.findOne({
-            where: {
-                id
-            }
-        });
-        if(!i) return false;
-        await Item.delete({
-            where: {
-                id
-            }
+        const t = await Todo.create({
+            todo: [],
+            current: [],
+            done: []
+        }).save();
+        await Project.update({ id }, {
+            todo: t.id
         });
         return true;
     }
@@ -250,27 +233,40 @@ export class TodoResolver {
                 id: todoId 
             }
         });
-        if(!todo || !i) return false;
+        if(!todo) return false;
+        if(!i) return false;
         await Item.delete({
-            where: {
-                id
-            }
+            id
         });
-        const ts = todo.todo;
-        const c = todo.current;
-        const d = todo.done;
-        ts.filter((val) => {
-            if(val == id) return false;
-            return true;
-        })
-        c.filter((val) => {
-            if(val == id) return false;
-            return true;
-        })
-        d.filter((val) => {
-            if(val == id) return false;
-            return true;
-        })
+
+        let ts: any[] = [];
+        let c: any[] = [];
+        let d: any[] = [];
+
+        for(let i = 0; i < todo.todo.length; i++) {
+            if(todo.todo[i] == id) {
+
+            } else {
+                ts.push(todo.todo[i])
+            }
+        }
+
+        for(let i = 0; i < todo.current.length; i++) {
+            if(todo.current[i] == id) {
+
+            } else {
+                ts.push(todo.current[i])
+            }
+        }
+
+        for(let i = 0; i < todo.done.length; i++) {
+            if(todo.done[i] == id) {
+
+            } else {
+                ts.push(todo.done[i])
+            }
+        }
+
         await Todo.update({
             id: todoId
         }, {
@@ -300,9 +296,7 @@ export class TodoResolver {
             todo: null
         })
         await Todo.delete({
-            where: {
-                id
-            }
+            id
         })
         
         return true;

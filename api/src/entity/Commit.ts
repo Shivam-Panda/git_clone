@@ -16,11 +16,11 @@ export class Commit extends BaseEntity {
     @Column("simple-array")
     folders: number[]
 
-    @Field(() => String)
-    @Column()
+    @Field(() => String, { nullable: true })
+    @Column({ nullable: true })
     name: string;
 
-    @Field(() => Int)
-    @Column("int")
+    @Field(() => Int, { nullable: true })
+    @Column("int", { nullable: true })
     projectId: number;
 }
