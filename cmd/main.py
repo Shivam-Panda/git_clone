@@ -9,10 +9,16 @@ c = sys.argv[0]
 storage_dir = './.panda/storage.json'
 body_dir = './.panda/body.json'
 
+# panda_ignore = []
+#
+# try:
+#     print('No .pandaignore file')
+# except:
+#     panda_ignore = open('.pandaignore', "r").read().split('\n')
+
 from python_graphql_client import GraphqlClient
 
 client = GraphqlClient("https://safe-crag-17237.herokuapp.com/graphql")
-
 
 def loginHttp(username, password):
     query = """
@@ -23,12 +29,15 @@ def loginHttp(username, password):
             })
         } 
     """
-    data = client.execute(query=query, variables={
-        "username": username,
-        "password": password
-    })['data']
+    try:
+        data = client.execute(query=query, variables={
+            "username": username,
+            "password": password
+        })['data']
+    except:
+        print("Error Fetching")
+        exit()
     return data['login']
-
 
 def logout():
     r_storage = open(storage_dir, "r").read()
@@ -74,12 +83,17 @@ def commit(projectId, s, name):
         }
     '''
 
-    d = client.execute(query=query, variables={
-        "projectId": projectId,
-        "s": s,
-        "name": name
-    })
+    try:
+        d = client.execute(query=query, variables={
+            "projectId": projectId,
+            "s": s,
+            "name": name
+        })
+    except:
+        print("Error Fetching")
+        exit()
     return d['data']['commit']
+
 
 def login(username, password):
     r_storage = open(storage_dir, "r").read()
@@ -183,28 +197,21 @@ def pullRequestWriteFolder(full_vals, dir, folder_name):
     files = full_vals[folder_name]
     cur_dir = dir + folder_name + '/'
 
-    for i in files:
-        if i.__contains__('.'):
-            open(cur_dir + i, "w").write(full_vals[i])
-        else:
-            pullRequestWriteFolder(full_vals, cur_dir, i)
-
-
-def cloneRequestWriteFolder(full_vals, dir, folder_name):
-    files = full_vals[folder_name]
-    cur_dir = dir + folder_name + '/'
-
-    os.mkdir(cur_dir)
+    if os.path.isdir(cur_dir):
+        pass
+    else:
+        os.mkdir(cur_dir)
 
     for i in files:
         if i.__contains__('.'):
             try:
                 open(cur_dir + i, "a")
             except:
-                print("Already Created")
+                print("File Already Exists")
             open(cur_dir + i, "w").write(full_vals[i])
         else:
             pullRequestWriteFolder(full_vals, cur_dir, i)
+
 
 # To Git Clone just pull request it
 def handlePullRequest():
@@ -222,67 +229,73 @@ def handlePullRequest():
 
     iid = getProjectId()
 
-    data = client.execute(query=query, variables={
-        'projectId': iid,
-        "name": name
-    })['data']
+    try:
+        d = client.execute(query=query, variables={
+            'projectId': iid,
+            "name": name
+        })
+    except:
+        print("Errors Fetching")
+        exit()
 
-    if data['errors'] is not None:
-        return
+    data = d['data']
+
+    try:
+        if d['errors'] is not None:
+            print("Errors Occured")
+            print(d['errors'])
+            exit()
+    except:
+        pass
 
     j = json.loads(data['pullRequest'])
     # Get the Root
     root = j['root']
     for i in root:
         if i.__contains__('.'):
+            try:
+                open(i, "a")
+            except:
+                print('File Already Exists')
             open(i, 'w').write(j[i])
         else:
             pullRequestWriteFolder(full_vals=j, dir='./', folder_name=i)
 
-
-def clone():
-    try:
-        projectId = sys.argv[2]
-        commitName = input('Commit Name: ')
-
-        query = """
-            query ($projectId: Float!, $name: String!) {
-                pullRequest(
-                    projectId: $projectId,
-                    name: $name
-                )
+def checkValidProjectId(projectId):
+    query = '''
+        query ($id: Int!) {
+            findProject(input: {
+                id: $id
+            }) {
+                id
             }
-        """
+        }
+    '''
 
-        data = client.execute(query=query, variables={
-            'projectId': projectId,
-            'name': commitName
-        })['data']
-
-        if data['errors'] is not None:
-            exit()
-
-        j = json.loads(data['pullRequest'])
-
-        root = j['root']
-        for i in root:
-            if i.__contains__('.'):
-                try:
-                    open(i, "a")
-                except:
-                    print("File Already Created")
-                open(i, "w").write(j[i])
-            else:
-                cloneRequestWriteFolder(full_vals=j, dir='./', folder_name=i)
+    try:
+        d = client.execute(query=query, variables={
+            'id': int(projectId)
+        })
     except:
-        print("Must Have Project ID Trying to Clone")
+        print("Error Fetching")
         exit()
 
+    try:
+        if d['errors'] is not None:
+            print('Errors')
+            exit()
+    except:
+        print("No Errors")
+
+    if d['data']['findProject'] is None:
+        return False
+    else:
+        return True
 
 try:
     cmd = sys.argv[1]
 except:
-    print('Must Have An Arguement After Command')
+    print('Must Have An Argument After Command')
     exit()
 
 if cmd == 'add':
@@ -314,26 +327,23 @@ if cmd == 'add':
                 except:
                     pass
     else:
+        write_folder(file_names=files, name='root')
         for i in files:
             if i.startswith('./'):
                 f = os.listdir(i)
                 open_folder(f, [i], i)
             else:
-                try:
-                    write_file(open(i, "r").read(), i)
-                except:
-                    pass
+                f = os.listdir(i)
+                open_folder(f, [i], i)
 elif cmd == 'login':
     user = sys.argv[2]
     passw = sys.argv[3]
     login(user, passw)
-
 elif cmd == 'commit':
     com_name = input('Commit Name: ')
     print("Make Sure You Are Logged In and have Added")
     if checkLogin():
         s = stringify()
-        print(s)
         if commit(getProjectId(), s, com_name):
             reset_files()
             print("Commit Succeeded")
@@ -344,8 +354,6 @@ elif cmd == 'commit':
         exit()
 elif cmd == 'pull':
     handlePullRequest()
-elif cmd == 'clone':
-    clone()
 elif cmd == 'get_login':
     get = get_login()
     print('Username: ' + get[0])
@@ -356,10 +364,59 @@ elif cmd == 'reverse':
     reset_files()
 elif cmd == 'init':
     try:
-        open('./.panda/storage.json')
-        print('Already Initialized')
+        id = sys.argv[2]
     except:
-        initializeDirStorage(int(sys.argv[2]))
-        print('Initialized')
+        print('Must Input ProjectID')
+        exit()
+
+    if checkValidProjectId(id):
+        # Do Nothing
+        pass
+    else:
+        print('Project ID not Valid')
+        exit()
+
+    if os.path.isdir('./.panda'):
+
+        if os.path.isfile('./.panda/storage.json'):
+            print('Storage.json Created')
+        else:
+            open('./.panda/storage.json', "a")
+
+            s = json.dumps({
+                'reqs': {
+                    'projectId': id
+                }
+            })
+
+            open('./.panda/storage.json', "w").write(s)
+
+            print('Now Initialized')
+
+        if os.path.isfile('./.panda/body.json'):
+            print('body.json Created')
+        else:
+            open('./.panda/body.json', "a")
+
+            s = json.dumps({
+                'need': ['root']
+            })
+
+            open('./.panda/body.json', "w").write(s)
+
+            print('Now Initialized')
+    else:
+        initializeDirStorage(int(id))
 else:
     print('Valid Command not found')
+    print('''
+    - add
+    - login
+    - commit
+    - pull
+    - clone
+    - get_login
+    - logout
+    - reverse
+    - init 
+    ''')
