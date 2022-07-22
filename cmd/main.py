@@ -9,12 +9,13 @@ c = sys.argv[0]
 storage_dir = './.panda/storage.json'
 body_dir = './.panda/body.json'
 
-# panda_ignore = []
-#
-# try:
-#     print('No .pandaignore file')
-# except:
-#     panda_ignore = open('.pandaignore', "r").read().split('\n')
+panda_ignore = []
+
+try:
+    panda_ignore = open('.pandaignore', "r").read().split('\n')
+except:
+    # No .pandaignore file
+    pass
 
 from python_graphql_client import GraphqlClient
 
@@ -171,7 +172,10 @@ def open_folder(f, names, name):
                 dir += '/'
             dir += i
             try:
-                write_file(open(dir).read(), i)
+                if dir in panda_ignore:
+                    pass
+                else:
+                    write_file(open(dir).read(), i)
             except:
                 print("Error")
                 exit()
@@ -185,9 +189,12 @@ def open_folder(f, names, name):
             ns.append(i)
             dir += i
             try:
-                s = os.listdir(dir)
-                write_folder(s, i)
-                open_folder(s, ns, i)
+                if dir in panda_ignore:
+                    pass
+                else:
+                    s = os.listdir(dir)
+                    write_folder(s, i)
+                    open_folder(s, ns, i)
             except:
                 print("Error")
                 exit()
@@ -304,7 +311,7 @@ if cmd == 'add':
         files_in_dir = os.listdir('./')
         files_without_panda = []
         for i in files_in_dir:
-            if i == '.panda' or i == '.idea' or i == '.git' or i == 'env':
+            if i == '.panda' or i in panda_ignore:
                 pass
             else:
                 files_without_panda.append(i)
